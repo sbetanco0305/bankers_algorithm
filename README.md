@@ -68,4 +68,4 @@ g++ -std=c++11 banker.cpp -o banker
 ./banker
 
 Results: 
-        ![bankers_alogrithm screenshots](screenshots/producer_consumer_example.jpeg)
+        ![bankers_alogrithm screenshots](screenshots/result.jpeg)
