@@ -2,84 +2,95 @@
 
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 int main() {
-    int n = 5;      // # of processes
-    int r = 3;      // # of resources
-    std::vector<std::vector<int>> alloc = {
-        {0, 1, 0},  // P0   // Allocation Matrix
-        {2, 0, 0},  // P1
-        {3, 0, 2},  // P2
-        {2, 2, 1},  // P3
-        {0, 0, 2}   // P4
-    };  
+    
+    std::ifstream fin("input.txt");
+    if (!fin) {
+        std::cout << "Error: Could not open file." << std::endl;
+        return 1;
+    }
 
-    std::vector<std::vector<int>> max = {
-        {7, 5, 3},  // P0   // Max Matrix
-        {3, 3, 2},  // P1
-        {9, 0, 2},  // P2
-        {2, 2, 2},  // P3
-        {4, 3, 3}   // P4
-    };   
+    int n, r;
+    fin >> n >> r;
 
-    std::vector<int> avail = {3, 2, 2};                         // Available Resources
-
-    std::vector<int> f(n, 0);   // Finished flags
-    std::vector<int> ans(n);    // Safe seq
-    int ind = 0;
-
-    // Need matrix
+    std::vector<std::vector<int>> alloc(n, std::vector<int>(r));
+    std::vector<std::vector<int>> max(n, std::vector<int>(r));
     std::vector<std::vector<int>> need(n, std::vector<int>(r));
+    std::vector<int> avail(r);
 
-    // Calculate Need = Max - Allocation
+    // allocation
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < r; ++j) {
+            fin >> alloc[i][j];
+        }
+    }
+
+    // max
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < r; ++j) {
+            fin >> max[i][j];
+        }
+    }
+
+    // available
+    for (int j = 0; j < r; ++j) {
+        fin >> avail[j];
+    }
+
+    // need
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < r; ++j) {
             need[i][j] = max[i][j] - alloc[i][j];
         }
     }
 
-    // Banker's Algorithm
-    for (int k = 0; k < n; ++k) {
+    std::vector<int> safe_seq;
+    std::vector<bool> done(n, false);
+
+    int finished_count = 0;
+
+   while(finished_count < n) {
+        
+        bool found = false;
+
         for (int i = 0; i < n; ++i) {
-            if (f[i] == 0) {
-                bool flag = true;
+            if (!done[i]) {
+                bool can_run = true;
+
                 for (int j = 0; j < r; ++j) {
                     if (need[i][j] > avail[j]) {
-                        flag = false;
+                        can_run = false;
                         break;
                     }
                 }
 
-                if (flag) {
+                if (can_run) {
                     for (int j = 0; j < r; ++j) {
                         avail[j] += alloc[i][j];
                     }
-                    ans[ind++] = i;
-                    f[i] = 1;
+
+                    safe_seq.push_back(i);
+                    done[i] = true;
+                    finished_count++;
+                    found = true;
                 }
             }
         }
-    }
 
-    // Check if safe
-    bool safe = true;
-    for (int i = 0; i < n; ++i) {
-        if (f[i] == 0) {
-            safe = false;
-            break;
+        if (!found) {
+            std::cout << "System is not in a Safe State. " << std::endl;
+            return 0;
         }
-    }
+   }
+   
+   std::cout << "System is in a Safe State." << std::endl;
+   std::cout << "Safe sequence: ";
+   for (int p : safe_seq) {
+        std::cout << "P" << p << " ";
+   }
+   std::cout << std::endl;
 
-    if (safe) {
-        std::cout << "System is in a Safe State " << std::endl;
-        std::cout << "Safe sequence: ";
-        for (int i = 0; i < n; ++i) {
-            std::cout << "P" << ans[i] << (i == n - 1 ? "" : " -> ");
-        }
-        std::cout << std::endl;
-    } else {
-        std::cout << "System is not in a Safe State." << std::endl;
-    }
-
-    return 0;
+   return 0;
 }
